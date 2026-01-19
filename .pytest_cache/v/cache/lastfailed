@@ -1,0 +1,3 @@
+{
+  "tests/test_creating_order.py::TestOrderCreation::test_create_order_with_different_ingredient_counts[3]": true
+}
