@@ -1,6 +1,7 @@
 import allure
 import pytest
 from data.test_data import UserData, ErrorMessages
+from helpers.api_client import ApiClient  # <-- ДОБАВИТЬ импорт
 from helpers.data_generator import DataGenerator
 
 
@@ -23,12 +24,13 @@ class TestUserCreation:
 
     @allure.title("Создание пользователя, который уже зарегистрирован")
     @allure.description("Тест проверяет ошибку при попытке создать уже существующего пользователя")
-    def test_create_existing_user_fails(self, api_client, setup_user):
+    def test_create_existing_user_fails(self, setup_user):  # <-- УБРАТЬ api_client из параметров
         with allure.step("Создать первого пользователя"):
             user_data, first_response, first_status = setup_user()
             assert first_status == 200, "Не удалось создать пользователя для теста"
 
         with allure.step("Попытаться создать пользователя с теми же данными повторно"):
+            api_client = ApiClient()  # <-- СОЗДАТЬ КЛИЕНТ ЗДЕСЬ
             response, status_code = api_client.create_user(user_data)
 
         with allure.step("Проверить ошибку дублирования пользователя"):
@@ -40,12 +42,13 @@ class TestUserCreation:
     @allure.title("Создание пользователя без обязательного поля")
     @allure.description("Тест проверяет ошибку при создании пользователя без обязательных полей")
     @pytest.mark.parametrize("missing_field", UserData.REQUIRED_FIELDS)
-    def test_create_user_without_required_field(self, api_client, missing_field):
+    def test_create_user_without_required_field(self, missing_field):  # <-- УБРАТЬ api_client из параметров
         with allure.step(f"Сгенерировать данные пользователя без поля '{missing_field}'"):
             data_generator = DataGenerator()
             user_data = data_generator.generate_user_without_field(missing_field)
 
         with allure.step("Попытаться создать пользователя с неполными данными"):
+            api_client = ApiClient()  # <-- СОЗДАТЬ КЛИЕНТ ЗДЕСЬ
             response, status_code = api_client.create_user(user_data)
 
         with allure.step("Проверить ошибку валидации"):

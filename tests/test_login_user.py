@@ -1,5 +1,6 @@
 import allure
 from data.test_data import ErrorMessages
+from helpers.api_client import ApiClient  # <-- ДОБАВИТЬ ИМПОРТ
 from helpers.data_generator import DataGenerator
 
 
@@ -8,7 +9,7 @@ from helpers.data_generator import DataGenerator
 class TestUserLogin:
     @allure.title("Вход под существующим пользователем")
     @allure.description("Тест проверяет успешную авторизацию с валидными учетными данными")
-    def test_login_existing_user_success(self, setup_user, api_client):
+    def test_login_existing_user_success(self, setup_user):  # <-- УБРАТЬ api_client
         with allure.step("Создать тестового пользователя"):
             user_data, create_response, create_status = setup_user()
             assert create_status == 200, "Не удалось создать пользователя для теста"
@@ -20,6 +21,7 @@ class TestUserLogin:
             }
 
         with allure.step("Выполнить авторизацию"):
+            api_client = ApiClient()  # <-- СОЗДАТЬ КЛИЕНТ ЗДЕСЬ
             response, status_code = api_client.login_user(login_data)
 
         with allure.step("Проверить успешную авторизацию"):
@@ -37,7 +39,7 @@ class TestUserLogin:
 
     @allure.title("Вход с неверным email")
     @allure.description("Тест проверяет ошибку при авторизации с неверным email")
-    def test_login_with_invalid_email_fails(self, setup_user, api_client):
+    def test_login_with_invalid_email_fails(self, setup_user):  # <-- УБРАТЬ api_client
         with allure.step("Создать тестового пользователя"):
             user_data, create_response, create_status = setup_user()
             assert create_status == 200, "Не удалось создать пользователя для теста"
@@ -49,6 +51,7 @@ class TestUserLogin:
             }
 
         with allure.step("Выполнить попытку авторизации"):
+            api_client = ApiClient()  # <-- СОЗДАТЬ КЛИЕНТ ЗДЕСЬ
             response, status_code = api_client.login_user(login_data)
 
         with allure.step("Проверить ошибку авторизации"):
@@ -59,7 +62,7 @@ class TestUserLogin:
 
     @allure.title("Вход с неверным паролем")
     @allure.description("Тест проверяет ошибку при авторизации с неверным паролем")
-    def test_login_with_invalid_password_fails(self, setup_user, api_client):
+    def test_login_with_invalid_password_fails(self, setup_user):  # <-- УБРАТЬ api_client
         with allure.step("Создать тестового пользователя"):
             user_data, create_response, create_status = setup_user()
             assert create_status == 200, "Не удалось создать пользователя для теста"
@@ -71,6 +74,7 @@ class TestUserLogin:
             }
 
         with allure.step("Выполнить попытку авторизации"):
+            api_client = ApiClient()  # <-- СОЗДАТЬ КЛИЕНТ ЗДЕСЬ
             response, status_code = api_client.login_user(login_data)
 
         with allure.step("Проверить ошибку авторизации"):
@@ -81,12 +85,13 @@ class TestUserLogin:
 
     @allure.title("Вход с неверным email и паролем")
     @allure.description("Тест проверяет ошибку при авторизации с неверными email и паролем")
-    def test_login_with_invalid_email_and_password_fails(self, api_client):
+    def test_login_with_invalid_email_and_password_fails(self):  # <-- УБРАТЬ api_client
         with allure.step("Сгенерировать полностью невалидные учетные данные"):
             data_generator = DataGenerator()
             invalid_credentials = data_generator.generate_invalid_credentials()
 
         with allure.step("Выполнить попытку авторизации"):
+            api_client = ApiClient()  # <-- СОЗДАТЬ КЛИЕНТ ЗДЕСЬ
             response, status_code = api_client.login_user(invalid_credentials)
 
         with allure.step("Проверить ошибку авторизации"):
@@ -97,7 +102,7 @@ class TestUserLogin:
 
     @allure.title("Вход без пароля")
     @allure.description("Тест проверяет ошибку при авторизации без пароля")
-    def test_login_without_password_fails(self, setup_user, api_client):
+    def test_login_without_password_fails(self, setup_user):  # <-- УБРАТЬ api_client
         with allure.step("Создать тестового пользователя"):
             user_data, create_response, create_status = setup_user()
             assert create_status == 200, "Не удалось создать пользователя для теста"
@@ -108,6 +113,7 @@ class TestUserLogin:
             }
 
         with allure.step("Выполнить попытку авторизации"):
+            api_client = ApiClient()  # <-- СОЗДАТЬ КЛИЕНТ ЗДЕСЬ
             response, status_code = api_client.login_user(login_data)
 
         with allure.step("Проверить ошибку авторизации"):
@@ -118,7 +124,7 @@ class TestUserLogin:
 
     @allure.title("Вход без email")
     @allure.description("Тест проверяет ошибку при авторизации без email")
-    def test_login_without_email_fails(self, setup_user, api_client):
+    def test_login_without_email_fails(self, setup_user):  # <-- УБРАТЬ api_client
         with allure.step("Создать тестового пользователя"):
             user_data, create_response, create_status = setup_user()
             assert create_status == 200, "Не удалось создать пользователя для теста"
@@ -129,6 +135,7 @@ class TestUserLogin:
             }
 
         with allure.step("Выполнить попытку авторизации"):
+            api_client = ApiClient()  # <-- СОЗДАТЬ КЛИЕНТ ЗДЕСЬ
             response, status_code = api_client.login_user(login_data)
 
         with allure.step("Проверить ошибку авторизации"):

@@ -1,6 +1,8 @@
 import allure
 import pytest
-from conftest import SimpleResponse, ErrorMessages
+from helpers.api_client import ApiClient
+from helpers.models import SimpleResponse
+from data.test_data import ErrorMessages
 
 
 @allure.epic("Stellar_Burgers_API")
@@ -17,16 +19,17 @@ class TestOrderCreation:
             response = SimpleResponse(api_response)
 
         with allure.step("Проверить успешное создание заказа"):
-            assert status_code == 200
-            assert response.success is True
-            assert response.name is not None
-            assert response.order is not None
-            assert "number" in response.order
+            assert status_code == 200, f"Ожидался статус 200, получен {status_code}"
+            assert response.success is True, "Поле success должно быть True"
+            assert response.name is not None, "В ответе должно быть имя заказа"
+            assert response.order is not None, "В ответе должна быть информация о заказе"
+            assert "number" in response.order, "В заказе должен быть номер"
 
     @allure.title("Создание заказа без авторизации")
     @allure.description("Тест проверяет, что заказ можно создать без авторизации")
-    def test_create_order_without_auth_success(self, api_client, valid_ingredients):
-        with allure.step("Убедиться, что токен авторизации отсутствует"):
+    def test_create_order_without_auth_success(self, valid_ingredients):
+        with allure.step("Создать API клиент без авторизации"):
+            api_client = ApiClient()
             api_client.set_token(None)
 
         with allure.step("Создать заказ без авторизации"):
@@ -35,10 +38,10 @@ class TestOrderCreation:
             response = SimpleResponse(api_response)
 
         with allure.step("Проверить успешное создание заказа"):
-            assert status_code == 200
-            assert response.success is True
-            assert response.name is not None
-            assert response.order is not None
+            assert status_code == 200, f"Ожидался статус 200, получен {status_code}"
+            assert response.success is True, "Поле success должно быть True"
+            assert response.name is not None, "В ответе должно быть имя заказа"
+            assert response.order is not None, "В ответе должна быть информация о заказе"
 
     @allure.title("Создание заказа с разным количеством ингредиентов")
     @allure.description("Тест проверяет создание заказа с 1 и 2+ ингредиентами")
@@ -49,8 +52,6 @@ class TestOrderCreation:
     def test_create_order_with_various_ingredient_counts(
         self, authorized_api_client, valid_ingredients, ingredient_count, description
     ):
-        """Заменил test_create_order_with_different_ingredient_counts 
-           и test_create_order_with_max_ingredients"""
         with allure.step(description):
             ingredients = valid_ingredients[:ingredient_count]
             order_data = {"ingredients": ingredients}
@@ -58,9 +59,9 @@ class TestOrderCreation:
             response = SimpleResponse(api_response)
 
         with allure.step("Проверить успешное создание"):
-            assert status_code == 200
-            assert response.success is True
-            assert response.order is not None
+            assert status_code == 200, f"Ожидался статус 200, получен {status_code}"
+            assert response.success is True, "Поле success должно быть True"
+            assert response.order is not None, "В ответе должна быть информация о заказе"
 
     @allure.title("Создание заказа без ингредиентов (негативный)")
     @allure.description("Тест проверяет ошибку при создании заказа с пустым списком ингредиентов")
@@ -71,9 +72,10 @@ class TestOrderCreation:
             response = SimpleResponse(api_response)
 
         with allure.step("Проверить ошибку валидации"):
-            assert status_code == 400
-            assert response.success is False
-            assert response.message == ErrorMessages.INGREDIENTS_REQUIRED
+            assert status_code == 400, f"Ожидался статус 400, получен {status_code}"
+            assert response.success is False, "Поле success должно быть False"
+            assert response.message == ErrorMessages.INGREDIENTS_REQUIRED, \
+                f"Ожидалось сообщение '{ErrorMessages.INGREDIENTS_REQUIRED}', получено '{response.message}'"
 
     @allure.title("Создание заказа без поля ingredients (негативный)")
     @allure.description("Тест проверяет ошибку при создании заказа без поля ingredients")
@@ -84,9 +86,10 @@ class TestOrderCreation:
             response = SimpleResponse(api_response)
 
         with allure.step("Проверить ошибку валидации"):
-            assert status_code == 400
-            assert response.success is False
-            assert response.message == ErrorMessages.INGREDIENTS_REQUIRED
+            assert status_code == 400, f"Ожидался статус 400, получен {status_code}"
+            assert response.success is False, "Поле success должно быть False"
+            assert response.message == ErrorMessages.INGREDIENTS_REQUIRED, \
+                f"Ожидалось сообщение '{ErrorMessages.INGREDIENTS_REQUIRED}', получено '{response.message}'"
 
     @allure.title("Создание заказа с неверным хешем ингредиентов (негативный)")
     @allure.description("Тест проверяет обработку невалидных ID ингредиентов")
@@ -98,25 +101,46 @@ class TestOrderCreation:
             response = SimpleResponse(api_response)
 
         with allure.step("Проверить ошибку сервера"):
-            # API может возвращать 500 или 400
-            assert status_code in [400, 500]
-            assert response.success is False
+            # Уточняем ожидаемый статус (зависит от API)
+            assert status_code == 500, f"Ожидался статус 500 для невалидных ингредиентов, получен {status_code}"
+            assert response.success is False, "Поле success должно быть False"
 
-    @allure.title("Параметризованный тест различных невалидных данных")
-    @allure.description("Объединяет несколько негативных сценариев")
-    def test_create_order_with_various_invalid_data(
-        self, authorized_api_client, invalid_ingredients_data
-    ):
-        test_data = invalid_ingredients_data
+    # РАЗДЕЛИЛИ ПАРАМЕТРИЗОВАННЫЙ ТЕСТ НА ОТДЕЛЬНЫЕ АТОМАРНЫЕ ТЕСТЫ
 
-        with allure.step(f"Попытаться создать заказ с данными: {test_data}"):
-            order_data = {}
-            if test_data is not None:
-                order_data["ingredients"] = test_data
+    @allure.title("Создание заказа с пустым списком ингредиентов")
+    @allure.description("Тест проверяет ошибку при создании заказа с пустым списком ингредиентов")
+    def test_create_order_with_empty_list(self, authorized_api_client):
+        """Отдельный атомарный тест для пустого списка"""
+        order_data = {"ingredients": []}
+        api_response, status_code = authorized_api_client.create_order(order_data)
+        response = SimpleResponse(api_response)
 
-            api_response, status_code = authorized_api_client.create_order(order_data)
-            response = SimpleResponse(api_response)
+        assert status_code == 400, f"Ожидался статус 400 для пустого списка, получен {status_code}"
+        assert response.success is False, "Поле success должно быть False"
+        assert response.message == ErrorMessages.INGREDIENTS_REQUIRED, \
+            f"Ожидалось сообщение '{ErrorMessages.INGREDIENTS_REQUIRED}', получено '{response.message}'"
 
-        with allure.step("Проверить обработку невалидных данных"):
-            assert status_code in [400, 500]
-            assert response.success is False
+    @allure.title("Создание заказа без поля ingredients")
+    @allure.description("Тест проверяет ошибку при создании заказа без поля ingredients")
+    def test_create_order_with_missing_field(self, authorized_api_client):
+        """Отдельный атомарный тест для отсутствия поля"""
+        order_data = {}  # Нет поля ingredients
+        api_response, status_code = authorized_api_client.create_order(order_data)
+        response = SimpleResponse(api_response)
+
+        assert status_code == 400, f"Ожидался статус 400 для отсутствия поля, получен {status_code}"
+        assert response.success is False, "Поле success должно быть False"
+        assert response.message == ErrorMessages.INGREDIENTS_REQUIRED, \
+            f"Ожидалось сообщение '{ErrorMessages.INGREDIENTS_REQUIRED}', получено '{response.message}'"
+
+    @allure.title("Создание заказа с невалидным хешем ингредиента")
+    @allure.description("Тест проверяет обработку невалидного ID ингредиента")
+    def test_create_order_with_invalid_hash(self, authorized_api_client):
+        """Отдельный атомарный тест для невалидного хеша"""
+        order_data = {"ingredients": ["invalid_hash_1"]}
+        api_response, status_code = authorized_api_client.create_order(order_data)
+        response = SimpleResponse(api_response)
+
+        # Уточняем ожидаемый статус для невалидного хеша
+        assert status_code == 500, f"Ожидался статус 500 для невалидного хеша, получен {status_code}"
+        assert response.success is False, "Поле success должно быть False"
